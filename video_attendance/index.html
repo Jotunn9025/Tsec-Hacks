@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Attendance System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .status {
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .presence-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #dc3545;
+            margin-left: 10px;
+            animation: pulse 1s infinite;
+        }
+
+        .presence-indicator.present {
+            background: #28a745;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .session-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📹 WebRTC Attendance System</h1>
+
+        <!-- Session Setup -->
+        <div class="section">
+            <h2>Start Attendance Session</h2>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="classname">Class Name:</label>
+                <input type="text" id="classname" placeholder="Enter class name">
+            </div>
+            <div class="form-group">
+                <label for="lecname">Lecture Name:</label>
+                <input type="text" id="lecname" placeholder="Enter lecture name">
+            </div>
+            <button id="startBtn" onclick="startSession()">Start Session</button>
+            <button id="endBtn" onclick="endSession()" disabled class="danger">End Session</button>
+        </div>
+
+        <!-- Video Feed -->
+        <div class="section" id="videoSection" style="display: none;">
+            <h2>Live Camera Feed</h2>
+            <div id="statusDiv" class="status">Initializing...</div>
+            <div class="video-container">
+                <video id="video" autoplay playsinline></video>
+            </div>
+            <canvas id="canvas"></canvas>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <h3 id="durationStat">0</h3>
+                    <p>Duration (seconds)</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="presentStat">0</h3>
+                    <p>Present (seconds)</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="percentageStat">0%</h3>
+                    <p>Attendance</p>
+                </div>
+                <div class="stat-card">
+                    <p>Status: <span id="detectionStatus">Not Detected</span>
+                    <span class="presence-indicator" id="indicator"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Attendance -->
+        <div class="section">
+            <h2>Query Attendance Records</h2>
+            <div class="form-group">
+                <label for="queryUsername">Username:</label>
+                <input type="text" id="queryUsername" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="queryClassname">Class Name:</label>
+                <input type="text" id="queryClassname" placeholder="Enter class name">
+            </div>
+            <div class="form-group">
+                <label for="queryLecname">Lecture Name:</label>
+                <input type="text" id="queryLecname" placeholder="Enter lecture name">
+            </div>
+            <button onclick="queryAttendance()">Get Attendance</button>
+            <div id="resultsDiv"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let video = null;
+        let canvas = null;
+        let ctx = null;
+        let stream = null;
+        let frameInterval = null;
+
+        async function startSession() {
+            const username = document.getElementById('username').value.trim();
+            const classname = document.getElementById('classname').value.trim();
+            const lecname = document.getElementById('lecname').value.trim();
+
+            if (!username || !classname || !lecname) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                // Get video stream
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                
+                video = document.getElementById('video');
+                canvas = document.getElementById('canvas');
+                ctx = canvas.getContext('2d');
+                
+                video.srcObject = stream;
+                
+                // Show video section
+                document.getElementById('videoSection').style.display = 'block';
+                
+                // Connect WebSocket
+                ws = new WebSocket('ws://localhost:8000/ws');
+                
+                ws.onopen = () => {
+                    // Send initial session data
+                    ws.send(JSON.stringify({
+                        username: username,
+                        classname: classname,
+                        lec_name: lecname
+                    }));
+                    
+                    updateStatus('Session started! Camera is active.', 'success');
+                    
+                    // Start sending frames (every 500ms to reduce load)
+                    frameInterval = setInterval(sendFrame, 500);
+                    
+                    // Update UI
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('endBtn').disabled = false;
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.status === 'update') {
+                        updateStats(data);
+                    } else if (data.status === 'session_ended') {
+                        updateStatus(`Session ended! Total duration: ${data.total_duration} seconds`, 'success');
+                        stopSession();
+                    } else if (data.error) {
+                        updateStatus(`Error: ${data.error}`, 'error');
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateStatus('Connection error occurred', 'error');
+                };
+                
+                ws.onclose = () => {
+                    updateStatus('Connection closed', 'error');
+                    stopSession();
+                };
+                
+            } catch (error) {
+                console.error('Error starting session:', error);
+                alert('Error accessing camera: ' + error.message);
+            }
+        }
+
+        function sendFrame() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            // Convert to base64
+            const frameData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            
+            ws.send(JSON.stringify({
+                type: 'frame',
+                frame: frameData
+            }));
+        }
+
+        function endSession() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'end_session'
+                }));
+            } else {
+                stopSession();
+            }
+        }
+
+        function stopSession() {
+            if (frameInterval) {
+                clearInterval(frameInterval);
+                frameInterval = null;
+            }
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('endBtn').disabled = true;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusDiv');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+
+        function updateStats(data) {
+            const duration = data.duration || 0;
+            const presenceLog = data.presence_log || '';
+            const present = (presenceLog.match(/1/g) || []).length;
+            const percentage = duration > 0 ? ((present / duration) * 100).toFixed(1) : 0;
+            
+            document.getElementById('durationStat').textContent = duration;
+            document.getElementById('presentStat').textContent = present;
+            document.getElementById('percentageStat').textContent = percentage + '%';
+            
+            const indicator = document.getElementById('indicator');
+            const detectionStatus = document.getElementById('detectionStatus');
+            
+            if (data.person_detected) {
+                indicator.classList.add('present');
+                detectionStatus.textContent = 'Detected';
+            } else {
+                indicator.classList.remove('present');
+                detectionStatus.textContent = 'Not Detected';
+            }
+        }
+
+        async function queryAttendance() {
+            const username = document.getElementById('queryUsername').value.trim();
+            const classname = document.getElementById('queryClassname').value.trim();
+            const lecname = document.getElementById('queryLecname').value.trim();
+
+            if (!username || !classname || !lecname) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/attendance?username=${encodeURIComponent(username)}&classname=${encodeURIComponent(classname)}&lec_name=${encodeURIComponent(lecname)}`
+                );
+
+                if (!response.ok) {
+                    throw new Error('No records found');
+                }
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                document.getElementById('resultsDiv').innerHTML = `
+                    <div class="results">
+                        <p style="color: #dc3545;">Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('resultsDiv');
+            
+            let html = `
+                <div class="results">
+                    <h3>Attendance Summary</h3>
+                    <p><strong>Username:</strong> ${data.username}</p>
+                    <p><strong>Class:</strong> ${data.classname}</p>
+                    <p><strong>Lecture:</strong> ${data.lec_name}</p>
+                    <p><strong>Total Sessions:</strong> ${data.total_sessions}</p>
+                    <p><strong>Total Duration:</strong> ${data.total_duration_seconds} seconds</p>
+                    <p><strong>Present:</strong> ${data.present_seconds} seconds</p>
+                    <p><strong>Absent:</strong> ${data.absent_seconds} seconds</p>
+                    <p><strong>Attendance:</strong> ${data.attendance_percentage}%</p>
+                    
+                    <h4 style="margin-top: 20px;">Individual Sessions:</h4>
+            `;
+            
+            data.sessions.forEach((session, index) => {
+                html += `
+                    <div class="session-item">
+                        <p><strong>Session ${index + 1}</strong></p>
+                        <p>Start Time: ${new Date(session.start_timestamp).toLocaleString()}</p>
+                        <p>Duration: ${session.duration_seconds} seconds</p>
+                        <p>Presence Log: ${session.presence_log.substring(0, 100)}${session.presence_log.length > 100 ? '...' : ''}</p>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopSession();
+        });
+    </script>
+</body>
+</html>
