@@ -90,7 +90,7 @@ All endpoints require a Bearer token with **User** (Student) role.
     "lecture": {
       "id": 4,
       "title": "Introduction to React",
-      "video_url": "https://res.cloudinary.com/dgw1i8qgp/video/upload/v123456789/lectures/shoes.mp4", // This is the Cloudinary URL
+      "video_url": "/uploads/lectures/7c9e1-unique-id.mp4", // This is the local file path
       "duration": 600,
       ...
     },

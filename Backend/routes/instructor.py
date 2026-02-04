@@ -9,7 +9,7 @@ from models.user_role import UserRole
 from schemas.course import CourseCreate, CourseOut, CourseUpdate
 from schemas.lecture import LectureCreate, LectureOut, LectureUpdate
 from auth.dependencies import get_current_user, RoleChecker, get_db
-from utils.cloudinary_utils import upload_image, upload_video
+from utils.local_storage_utils import save_file_locally
 
 # Router for instructor-specific endpoints
 router = APIRouter(prefix="/instructor", tags=["instructor"])
@@ -46,7 +46,7 @@ async def create_course(
 
     image_url = None
     if image:
-        image_url = upload_image(image.file)
+        image_url = save_file_locally(image, "courses")
 
     # Create the course linked to the instructor's profile
     new_course = Course(
@@ -162,8 +162,8 @@ async def create_lecture(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    # Upload video to Cloudinary
-    video_url = upload_video(video.file)
+    # Upload video to local storage
+    video_url = save_file_locally(video, "lectures")
 
     # Create the new lecture
     new_lecture = Lecture(

@@ -144,7 +144,8 @@ async def get_lecture_details(
     return {
         "lecture": lecture,
         "watch_time_seconds": (activity.watch_time_minutes * 60.0) if activity else 0.0,
-        "is_completed": activity.completed if activity else False
+        "is_completed": activity.completed if activity else False,
+        "amount_spent_for_lecture": activity.amount_spent_for_lecture if activity else 0.0
     }
 
 @router.post("/watch-activity")

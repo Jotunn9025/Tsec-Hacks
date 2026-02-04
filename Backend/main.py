@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from database import engine, Base
 from auth.dependencies import get_db
@@ -25,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount the 'uploads' directory to serve static files (images, videos)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include authentication-related routes
 app.include_router(auth.router)
