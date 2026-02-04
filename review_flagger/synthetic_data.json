@@ -1,0 +1,147 @@
+{
+  "users": [
+    {
+      "username": "alice_normal",
+      "account_age_days": 300,
+      "total_reviews_count": 15
+    },
+    {
+      "username": "bob_spammer",
+      "account_age_days": 5,
+      "total_reviews_count": 20
+    },
+    {
+      "username": "charlie_critic",
+      "account_age_days": 500,
+      "total_reviews_count": 50
+    }
+  ],
+  "courses": [
+    {
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "transcript_summary": "Introduction to neural networks, history of AI, backpropagation basics, and ethical considerations.",
+      "behavior_summary": "Lecturer is calm, detailed, and uses a chalkboard. Highly theoretical course."
+    },
+    {
+      "coursename": "Advanced Knitting",
+      "lecture_name": "Purling 101",
+      "transcript_summary": "Techniques for purling, cable knitting, and choosing the right yarn for sweaters.",
+      "behavior_summary": "Lecturer is sweet, tells stories, and demonstrates techniques slowly with close-ups."
+    }
+  ],
+  "ratings": [
+    {
+      "score": 5.0,
+      "username": "alice_normal",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Loved the neural nets part."
+    },
+    {
+      "score": 4.0,
+      "username": "alice_normal",
+      "coursename": "Advanced Knitting",
+      "lecture_name": "Purling 101",
+      "is_flagged": false,
+      "reason": "Good but slow."
+    },
+    {
+      "score": 4.5,
+      "username": "alice_normal",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Solid follow up lecture."
+    },
+    {
+      "score": 1.0,
+      "username": "bob_spammer",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": true,
+      "reason": "Bad."
+    },
+    {
+      "score": 1.0,
+      "username": "bob_spammer",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": true,
+      "reason": "Terrible."
+    },
+    {
+      "score": 1.0,
+      "username": "bob_spammer",
+      "coursename": "Advanced Knitting",
+      "lecture_name": "Purling 101",
+      "is_flagged": true,
+      "reason": "Hate wool."
+    },
+    {
+      "score": 1.0,
+      "username": "bob_spammer",
+      "coursename": "Advanced Knitting",
+      "lecture_name": "Purling 101",
+      "is_flagged": true,
+      "reason": "Itchy."
+    },
+    {
+      "score": 1.0,
+      "username": "bob_spammer",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": true,
+      "reason": "Boring."
+    },
+    {
+      "score": 4.0,
+      "username": "charlie_critic",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Decent overview."
+    },
+    {
+      "score": 5.0,
+      "username": "charlie_critic",
+      "coursename": "Advanced Knitting",
+      "lecture_name": "Purling 101",
+      "is_flagged": false,
+      "reason": "Best class ever."
+    },
+    {
+      "score": 4.5,
+      "username": "student_1",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Good"
+    },
+    {
+      "score": 4.0,
+      "username": "student_2",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Nice"
+    },
+    {
+      "score": 3.5,
+      "username": "student_3",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Okay"
+    },
+    {
+      "score": 5.0,
+      "username": "student_4",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Great"
+    }
+  ]
+}
