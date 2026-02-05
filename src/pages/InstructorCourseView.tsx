@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api, Course, Lecture } from '@/lib/api';
+import { api, Course, Lecture, formatUrl } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { LectureList } from '@/components/LectureList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BookOpen, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, Plus, Star } from 'lucide-react';
 import { toast } from 'sonner';
 
 const InstructorCourseView = () => {
@@ -33,7 +33,7 @@ const InstructorCourseView = () => {
                     title: 'New Course',
                     description: 'Course created successfully. Backend endpoints not implemented yet.',
                     category: '',
-                    thumbnail_url: '',
+                    image_url: '',
                     instructor_id: 0,
                     created_at: new Date().toISOString(),
                 });
@@ -107,9 +107,9 @@ const InstructorCourseView = () => {
                 {/* Course Header */}
                 <Card className="mb-8">
                     <div className="relative aspect-[21/9] bg-gradient-to-br from-primary/20 to-secondary/20">
-                        {course.thumbnail_url ? (
+                        {course.image_url ? (
                             <img
-                                src={course.thumbnail_url}
+                                src={formatUrl(course.image_url)}
                                 alt={course.title}
                                 className="w-full h-full object-cover"
                             />
@@ -123,6 +123,18 @@ const InstructorCourseView = () => {
                     <CardHeader>
                         <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Badge variant="outline">{course.category}</Badge>
+                                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-yellow-400/10 border border-yellow-400/20">
+                                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                                        <span className="text-sm font-bold text-yellow-500">
+                                            {course.average_rating?.toFixed(1) || '0.0'}
+                                        </span>
+                                        <span className="text-xs text-yellow-600/60 font-medium">
+                                            ({course.review_count || 0} reviews)
+                                        </span>
+                                    </div>
+                                </div>
                                 <CardTitle className="text-3xl mb-2">{course.title}</CardTitle>
                                 <CardDescription className="text-base">
                                     {course.description}

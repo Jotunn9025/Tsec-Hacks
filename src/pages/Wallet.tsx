@@ -1,30 +1,95 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Wallet as WalletIcon, Plus, History, TrendingUp } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Wallet as WalletIcon, Plus, TrendingUp } from 'lucide-react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { paymentApi } from '@/lib/api';
 
 const Wallet = () => {
-  const { user, updateWallet } = useAuth();
+  const { user, refreshBalance } = useAuth();
+  const navigate = useNavigate();
   const [amount, setAmount] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    refreshBalance();
+
+    // Listen for redirect back from payment gateway
+    const params = new URLSearchParams(window.location.search);
+    const intentId = params.get('intent_id');
+    const hash = params.get('hash') || params.get('tx_hash');
+
+    if (intentId) {
+      handlePostPaymentConfirmation(intentId, hash);
+    }
+  }, []);
+
+  const handlePostPaymentConfirmation = async (intentId: string, hash?: string | null) => {
+    setIsConfirming(true);
+    toast.loading('Confirming your deposit...', { id: 'confirming' });
+    try {
+      await paymentApi.confirmDeposit(intentId, hash ? { hash } : undefined);
+      toast.success('Funds added successfully!', { id: 'confirming' });
+      await refreshBalance();
+      // Clear URL params
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => navigate('/'), 10000);
+    } catch (err: any) {
+      toast.error(err.message || 'Payment confirmation failed', { id: 'confirming' });
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   if (!user) {
     return <Navigate to="/login" />;
   }
 
-  const handleAddMoney = () => {
-    const value = parseFloat(amount);
+  const handleDeposit = async (value: number) => {
     if (isNaN(value) || value <= 0) {
       toast.error('Please enter a valid amount');
       return;
     }
-    updateWallet(value);
-    toast.success(`₹${value.toFixed(2)} added to your wallet!`);
-    setAmount('');
+
+    setIsSubmitting(true);
+    try {
+      const res = await paymentApi.initiateDeposit(user.id, value);
+
+      // Open payment gateway in new tab
+      window.open(res.payment_url, '_blank');
+      toast.info('Opening payment gateway in a new tab...', {
+        description: 'Verification will complete automatically in 20 seconds after you enter card details.'
+      });
+
+      // Start 20-second timer for confirmation as requested
+      setTimeout(async () => {
+        try {
+          toast.loading('Finalizing settlement...', { id: 'auto-confirm' });
+          await paymentApi.confirmDeposit(res.payment_intent_id);
+          toast.success('Deposit successful! Wallet updated.', { id: 'auto-confirm' });
+          await refreshBalance();
+          setTimeout(() => navigate('/'), 10000);
+        } catch (confirmErr: any) {
+          console.error('Delayed confirmation failed:', confirmErr);
+          toast.error('Auto-settlement failed. Please use the "Redirect" link if available.', { id: 'auto-confirm' });
+        } finally {
+          setIsSubmitting(false);
+        }
+      }, 20000);
+
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to initiate deposit');
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddMoney = () => {
+    handleDeposit(parseFloat(amount));
   };
 
   const quickAmounts = [100, 250, 500, 1000];
@@ -52,7 +117,7 @@ const Wallet = () => {
                 <Plus className="h-5 w-5" />
                 Add Money
               </CardTitle>
-              <CardDescription>Add dummy money to your wallet (no real payment)</CardDescription>
+              <CardDescription>Deposit funds to your external wallet via Finternet</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
@@ -62,18 +127,19 @@ const Wallet = () => {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="flex-1"
+                  disabled={isSubmitting}
                 />
-                <Button onClick={handleAddMoney}>Add</Button>
+                <Button onClick={handleAddMoney} disabled={isSubmitting || !amount}>
+                  {isSubmitting ? 'Processing...' : 'Deposit'}
+                </Button>
               </div>
               <div className="flex gap-2 flex-wrap">
                 {quickAmounts.map((amt) => (
                   <Button
                     key={amt}
                     variant="outline"
-                    onClick={() => {
-                      updateWallet(amt);
-                      toast.success(`₹${amt} added to your wallet!`);
-                    }}
+                    disabled={isSubmitting}
+                    onClick={() => handleDeposit(amt)}
                   >
                     + ₹{amt}
                   </Button>
@@ -92,11 +158,10 @@ const Wallet = () => {
             </CardHeader>
             <CardContent className="space-y-3 text-muted-foreground">
               <p>• You're only charged for the time you actively watch videos</p>
-              <p>• Each lecture has a per-minute rate displayed</p>
-              <p>• We track your engagement through mouse and keyboard activity</p>
-              <p>• If you're inactive for 5 minutes, we pause and ask if you're still there</p>
-              <p>• Rewinding doesn't charge you twice - only forward progress counts</p>
-              <p>• Progress is automatically saved every 30 seconds</p>
+              <p>• Every session starts by checking your minimum wallet balance (₹10)</p>
+              <p>• Final session charges are processed when you close the lecture</p>
+              <p>• Deposits are powered by Finternet for secure transactions</p>
+              <p>• Your progress and billing data are synced across devices</p>
             </CardContent>
           </Card>
         </div>

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Video } from './VideoCard';
 import { AlertCircle, Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { formatUrl } from '@/lib/api';
 import { toast } from 'sonner';
 
 interface VideoPlayerProps {
@@ -153,7 +154,7 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
             {/* Simulated video player */}
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
               <img
-                src={video.thumbnail}
+                src={formatUrl(video.thumbnail)}
                 alt={video.title}
                 className="w-full h-full object-cover opacity-30"
               />

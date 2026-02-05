@@ -17,15 +17,18 @@ const InstructorCourseNew = () => {
         title: '',
         description: '',
         category: '',
-        thumbnail_url: '',
     });
+    const [image, setImage] = useState<File | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const course = await api.createCourse(formData);
+            const course = await api.createCourse({
+                ...formData,
+                image: image || undefined
+            });
             toast.success('Course created successfully!');
             navigate(`/instructor/courses/${course.id}`);
         } catch (error) {
@@ -94,16 +97,19 @@ const InstructorCourseNew = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="thumbnail">Thumbnail URL (Optional)</Label>
+                                <Label htmlFor="thumbnail">Course Image (Optional)</Label>
                                 <Input
                                     id="thumbnail"
-                                    type="url"
-                                    placeholder="https://example.com/image.jpg"
-                                    value={formData.thumbnail_url}
-                                    onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            setImage(e.target.files[0]);
+                                        }
+                                    }}
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    Provide a URL to an image that represents your course
+                                    Upload an image that represents your course
                                 </p>
                             </div>
 

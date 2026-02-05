@@ -22,6 +22,7 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import InstructorCourseNew from "./pages/InstructorCourseNew";
 import InstructorCourseView from "./pages/InstructorCourseView";
 import InstructorLectureNew from "./pages/InstructorLectureNew";
+import { ChatBot } from "@/components/ChatBot";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatBot />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

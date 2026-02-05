@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { api, StudentDashboard as StudentDashboardData, Course } from '@/lib/api';
+import { api, StudentDashboard as StudentDashboardData, Course, formatUrl } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MovingBorderCard } from '@/components/ui/moving-border';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Clock, IndianRupee, Library, Play } from 'lucide-react';
+import { BookOpen, Clock, IndianRupee, Library, Play, Star } from 'lucide-react';
 import { toast } from 'sonner';
 
 const StudentDashboard = () => {
-    const { user } = useAuth();
+    const { user, refreshBalance } = useAuth();
     const navigate = useNavigate();
     const [dashboard, setDashboard] = useState<StudentDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -20,12 +21,30 @@ const StudentDashboard = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [dashboardData, coursesData] = await Promise.all([
-                    api.getStudentDashboard(),
-                    api.getStudentCourses()
-                ]);
-                setDashboard(dashboardData);
-                setCourses(coursesData);
+                // Fetch external wallet balance first
+                await refreshBalance();
+
+                try {
+                    const dashboardData = await api.getStudentDashboard();
+                    setDashboard(dashboardData);
+                } catch (dashErr) {
+                    console.error('Failed to fetch dashboard data:', dashErr);
+                    if (user) {
+                        setDashboard({
+                            email: user.email,
+                            name: user.name,
+                            wallet_balance: user.wallet_balance || 0,
+                        });
+                    }
+                }
+
+                try {
+                    const coursesData = await api.getStudentCourses();
+                    setCourses(coursesData);
+                } catch (courseErr) {
+                    console.error('Failed to fetch courses:', courseErr);
+                    toast.error('Could not load courses');
+                }
 
                 // Load last watched
                 const storedLastWatched = localStorage.getItem('lastWatched');
@@ -34,21 +53,13 @@ const StudentDashboard = () => {
                 }
             } catch (error) {
                 console.error('Failed to fetch data:', error);
-                // Fallback
-                if (user) {
-                    setDashboard({
-                        email: user.email,
-                        name: user.name,
-                        wallet_balance: user.wallet_balance || 0,
-                    });
-                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [user]);
+    }, [user?.id]);
 
     if (loading) {
         return (
@@ -66,93 +77,118 @@ const StudentDashboard = () => {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="relative py-12 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10" />
-                <div className="container relative">
+            <section className="relative py-16 overflow-hidden bg-slate-900 text-white">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-background/5" />
+                <div className="container relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                        <div className="max-w-2xl">
-                            <h1 className="text-4xl font-bold tracking-tight mb-2">
-                                Welcome back, {dashboard?.name || user?.name}!
+                        <div className="max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                                Welcome back, <span className="text-primary-foreground">{dashboard?.name || user?.name}</span>
                             </h1>
-                            <p className="text-xl text-muted-foreground">
-                                Continue your learning journey
+                            <p className="text-lg text-slate-300">
+                                Ready to continue your masterclass?
                             </p>
                         </div>
 
                         {lastWatched && (
-                            <Card className="w-full md:w-auto min-w-[300px] border-primary/20 bg-background/50 backdrop-blur">
-                                <CardContent className="p-4 flex items-center justify-between gap-4">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
+                            <MovingBorderCard
+                                containerClassName="w-full md:w-auto min-w-[320px] animate-in fade-in slide-in-from-right-8 duration-700 delay-200"
+                                className="bg-white/10 border-white/10 backdrop-blur-md text-white shadow-xl"
+                            >
+                                <CardContent className="p-5 flex items-center justify-between gap-4">
+                                    <div className="overflow-hidden">
+                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-widest mb-1">
                                             Continue Watching
                                         </p>
-                                        <p className="font-medium line-clamp-1">{lastWatched.title}</p>
+                                        <p className="font-medium truncate max-w-[180px] text-white">{lastWatched.title}</p>
                                     </div>
-                                    <Button size="sm" onClick={() => navigate(`/student/lecture/${lastWatched.lectureId}`)}>
-                                        <Play className="h-4 w-4 mr-2" />
+                                    <Button
+                                        size="sm"
+                                        onClick={() => navigate(`/student/lecture/${lastWatched.lectureId}`)}
+                                        className="bg-white text-slate-900 hover:bg-slate-200 font-semibold"
+                                    >
+                                        <Play className="h-4 w-4 mr-2 fill-current" />
                                         Resume
                                     </Button>
                                 </CardContent>
-                            </Card>
+                            </MovingBorderCard>
                         )}
                     </div>
                 </div>
             </section>
 
             {/* Stats Cards */}
-            <section className="container py-8">
+            <section className="container py-10 -mt-8 relative z-20">
                 <div className="grid gap-6 md:grid-cols-3">
-                    <Card>
+                    <MovingBorderCard
+                        containerClassName="animate-in fade-in zoom-in-95 duration-500 delay-100 mt-4"
+                        className="shadow-2xl hover:shadow-[0_0_40px_rgba(59,130,246,0.2)] transition-all duration-300 border-none bg-card backdrop-blur-sm"
+                        borderRadius="0.75rem"
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
-                            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium text-slate-500">Wallet Balance</CardTitle>
+                            <div className="p-2 bg-green-100 rounded-full">
+                                <IndianRupee className="h-4 w-4 text-green-600" />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">₹{dashboard?.wallet_balance?.toFixed(2) || '0.00'}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <div className="text-3xl font-bold text-slate-900">₹{user?.wallet_balance?.toFixed(2) || '0.00'}</div>
+                            <p className="text-xs text-slate-500 mt-1">
                                 Available for learning
                             </p>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="mt-3 w-full"
+                                className="mt-4 w-full border-green-200 hover:bg-green-50 text-green-700"
                                 onClick={() => navigate('/wallet')}
                             >
                                 Add Funds
                             </Button>
                         </CardContent>
-                    </Card>
+                    </MovingBorderCard>
 
-                    <Card>
+                    <MovingBorderCard
+                        containerClassName="animate-in fade-in zoom-in-95 duration-500 delay-200 mt-4"
+                        className="shadow-2xl hover:shadow-[0_0_40px_rgba(59,130,246,0.2)] transition-all duration-300 border-none bg-card backdrop-blur-sm"
+                        borderRadius="0.75rem"
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Courses Accessed</CardTitle>
-                            <BookOpen className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium text-slate-500">Courses Accessed</CardTitle>
+                            <div className="p-2 bg-blue-100 rounded-full">
+                                <BookOpen className="h-4 w-4 text-blue-600" />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{dashboard?.total_courses_accessed || 0}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <div className="text-3xl font-bold text-slate-900">{dashboard?.total_courses_accessed || 0}</div>
+                            <p className="text-xs text-slate-500 mt-1">
                                 Courses you're enrolled in
                             </p>
                         </CardContent>
-                    </Card>
+                    </MovingBorderCard>
 
-                    <Card>
+                    <MovingBorderCard
+                        containerClassName="animate-in fade-in zoom-in-95 duration-500 delay-300 mt-4"
+                        className="shadow-2xl hover:shadow-[0_0_40px_rgba(59,130,246,0.2)] transition-all duration-300 border-none bg-card backdrop-blur-sm"
+                        borderRadius="0.75rem"
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Watch Time</CardTitle>
-                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium text-slate-500">Total Watch Time</CardTitle>
+                            <div className="p-2 bg-purple-100 rounded-full">
+                                <Clock className="h-4 w-4 text-purple-600" />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-3xl font-bold text-slate-900">
                                 {dashboard?.total_watch_time_minutes ?
                                     `${Math.floor(dashboard.total_watch_time_minutes / 60)}h ${Math.round(dashboard.total_watch_time_minutes % 60)}m`
                                     : '0h 0m'
                                 }
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-slate-500 mt-1">
                                 Time spent learning
                             </p>
                         </CardContent>
-                    </Card>
+                    </MovingBorderCard>
                 </div>
             </section>
 
@@ -170,11 +206,15 @@ const StudentDashboard = () => {
                 {courses.length > 0 ? (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {courses.map(course => (
-                            <div key={course.id} className="group relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md">
+                            <MovingBorderCard
+                                key={course.id}
+                                containerClassName="h-full"
+                                className="group relative overflow-hidden rounded-lg border-none bg-card text-card-foreground shadow-sm transition-all hover:shadow-md"
+                            >
                                 <div className="aspect-video w-full overflow-hidden bg-muted">
                                     {course.image_url ? (
                                         <img
-                                            src={course.image_url}
+                                            src={formatUrl(course.image_url)}
                                             alt={course.title}
                                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                         />
@@ -189,6 +229,15 @@ const StudentDashboard = () => {
                                         <Badge variant="secondary" className="text-xs">
                                             {course.category}
                                         </Badge>
+                                        <div className="flex items-center gap-1">
+                                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                            <span className="text-xs font-bold">
+                                                {course.average_rating?.toFixed(1) || '0.0'}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground ml-0.5">
+                                                ({course.review_count || 0})
+                                            </span>
+                                        </div>
                                     </div>
                                     <h3 className="font-semibold tracking-tight text-lg mb-1 line-clamp-1">
                                         {course.title}
@@ -203,7 +252,7 @@ const StudentDashboard = () => {
                                         View Course
                                     </Button>
                                 </div>
-                            </div>
+                            </MovingBorderCard>
                         ))}
                     </div>
                 ) : (

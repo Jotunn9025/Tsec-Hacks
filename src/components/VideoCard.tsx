@@ -1,6 +1,8 @@
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { MovingBorderCard } from '@/components/ui/moving-border';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatUrl } from '@/lib/api';
 import { Clock, Play } from 'lucide-react';
 
 export interface Video {
@@ -28,11 +30,14 @@ export const VideoCard = ({ video, onWatch, isPurchased }: VideoCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300">
+    <MovingBorderCard
+      className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-card"
+      containerClassName="hover:shadow-xl transition-all duration-300"
+    >
       <CardHeader className="p-0 relative">
         <div className="aspect-video bg-muted relative overflow-hidden">
-          <img 
-            src={video.thumbnail} 
+          <img
+            src={formatUrl(video.thumbnail)}
             alt={video.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -61,6 +66,6 @@ export const VideoCard = ({ video, onWatch, isPurchased }: VideoCardProps) => {
           {isPurchased ? 'Continue' : 'Watch'}
         </Button>
       </CardFooter>
-    </Card>
+    </MovingBorderCard>
   );
 };

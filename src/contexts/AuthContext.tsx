@@ -5,8 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-
-const API_BASE = 'https://sequestrable-elsie-knurliest.ngrok-free.dev';
+import { api, paymentApi, API_BASE_URL as API_BASE } from '@/lib/api';
 
 interface User {
   id: number;
@@ -26,6 +25,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, role?: 'user' | 'instructor') => Promise<boolean>;
   logout: () => void;
   updateWallet: (amount: number) => void;
+  refreshBalance: () => Promise<void>;
   updatePreferences: (preferences: string[]) => void;
   completeOnboarding: () => void;
 }
@@ -67,49 +67,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Try to validate the token by fetching the appropriate dashboard
       try {
         if (userData.role === 'user') {
-          // Validate student token
-          const studentRes = await fetch(`${API_BASE}/student/dashboard`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (studentRes.ok) {
-            const contentType = studentRes.headers.get('content-type');
-            if (contentType?.includes('application/json')) {
-              const studentData = await studentRes.json();
-              // Update user data with fresh backend data
-              const freshUserData: User = {
-                ...userData,
-                email: studentData.email || userData.email,
-                name: studentData.name || userData.name,
-                wallet_balance: studentData.wallet_balance ?? userData.wallet_balance,
-              };
-              setUser(freshUserData);
-              localStorage.setItem('currentUser', JSON.stringify(freshUserData));
-              console.log('✅ Student session validated');
-              setLoading(false);
-              return;
-            }
+          // Validate student token using centralized api client
+          try {
+            const studentData = await api.getStudentDashboard();
+            // Update user data with fresh backend data
+            const freshUserData: User = {
+              ...userData,
+              id: studentData.user_id || userData.id,
+              email: studentData.email || userData.email,
+              name: studentData.name || userData.name,
+              wallet_balance: studentData.wallet_balance ?? userData.wallet_balance,
+            };
+            setUser(freshUserData);
+            localStorage.setItem('currentUser', JSON.stringify(freshUserData));
+            console.log('✅ Student session validated');
+            setLoading(false);
+            return;
+          } catch (err) {
+            console.warn('⚠️ Student validation failed:', err);
+            throw err; // Signal failure to outer block
           }
         } else if (userData.role === 'instructor') {
-          // Validate instructor token
-          const instructorRes = await fetch(`${API_BASE}/instructor/`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (instructorRes.ok) {
-            const contentType = instructorRes.headers.get('content-type');
-            if (contentType?.includes('application/json')) {
-              setUser(userData);
-              console.log('✅ Instructor session validated');
-              setLoading(false);
-              return;
-            }
+          // Validate instructor token using centralized api client
+          try {
+            await api.getInstructorDashboard();
+            setUser(userData);
+            console.log('✅ Instructor session validated');
+            setLoading(false);
+            return;
+          } catch (err) {
+            console.warn('⚠️ Instructor validation failed:', err);
+            throw err;
           }
         }
 
@@ -189,7 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const studentData = await studentRes.json();
             console.log('✅ Student profile fetched:', studentData);
             const userData: User = {
-              id: 0,
+              id: studentData.user_id || 0,
               email: studentData.email || email,
               name: studentData.name || 'Student',
               role: 'user',
@@ -199,6 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
             saveUser(userData);
             console.log('✅ User saved, login complete!');
+            await refreshBalance(userData);
             return true;
           }
 
@@ -217,7 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (instructorRes.ok && instructorContentType?.includes('application/json')) {
             console.log('✅ Instructor profile fetched');
             const userData: User = {
-              id: 0,
+              id: 0, // Instructor ID handling if available
               email: email,
               name: 'Instructor',
               role: 'instructor',
@@ -236,11 +225,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // This allows login to work even if dashboard endpoints aren't implemented yet
           let userRole: 'user' | 'instructor' = 'user';
           let userName = email.split('@')[0];
+          let payload: any = {}; // Initialize payload
 
           // Try to decode JWT token to get the actual role
           try {
             const token = data.access_token;
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            payload = JSON.parse(atob(token.split('.')[1])); // Assign to payload
             console.log('🔍 Decoded JWT payload:', payload);
 
             if (payload.role) {
@@ -271,7 +261,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
 
           const fallbackUser: User = {
-            id: 0,
+            id: payload.id || 0,
             email: email,
             name: userName,
             role: userRole, // Use role from JWT token
@@ -281,6 +271,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
           saveUser(fallbackUser);
           console.log('✅ User logged in with fallback profile, role:', userRole);
+          await refreshBalance(fallbackUser);
           return true;
 
         } catch (profileError) {
@@ -304,7 +295,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
 
           const fallbackUser: User = {
-            id: 0,
+            id: 0, // Default to 0 if decoding fails completely
             email: email,
             name: userName,
             role: userRole,
@@ -314,6 +305,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
           saveUser(fallbackUser);
           console.log('✅ User logged in with error fallback profile, role:', userRole);
+          await refreshBalance(fallbackUser);
           return true;
         }
       } else {
@@ -386,7 +378,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Save user with the ROLE FROM SIGNUP, not from dashboard endpoints
       const userData: User = {
-        id: 0,
+        id: loginData.user_id || 0, // Fallback if not in loginData
         email: email,
         name: name,
         role: role, // Use the role from signup form
@@ -397,7 +389,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       saveUser(userData);
       console.log('✅ User created and logged in with role:', role);
-
+      await refreshBalance(userData);
       return true;
     } catch (error) {
       console.error('❌ Signup error:', error);
@@ -434,6 +426,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     saveUser(updatedUser);
   };
 
+  const refreshBalance = async (customUser?: User) => {
+    const targetUser = customUser || user;
+    if (!targetUser) return;
+    try {
+      const balanceData = await paymentApi.getWalletBalance(targetUser.id);
+      const updatedUser = {
+        ...targetUser,
+        wallet_balance: balanceData.wallet_balance,
+      };
+      saveUser(updatedUser);
+    } catch (error) {
+      console.error('❌ Failed to refresh wallet balance:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -443,6 +450,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signup,
         logout,
         updateWallet,
+        refreshBalance,
         updatePreferences,
         completeOnboarding,
       }}

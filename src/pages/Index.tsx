@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Play, Sparkles } from 'lucide-react';
+import { InteractiveAd } from '@/components/InteractiveAd';
+import { LayoutTextFlip } from '@/components/ui/layout-text-flip';
+import { TypewriterEffect } from '@/components/ui/typewriter-effect';
 
 const Index = () => {
   const { user, updatePreferences, completeOnboarding } = useAuth();
@@ -40,7 +43,7 @@ const Index = () => {
       toast.error('Please sign up or log in to watch videos');
       return;
     }
-    if (user.wallet < video.pricePerMinute) {
+    if (user.wallet_balance < video.pricePerMinute) {
       toast.error('Insufficient balance! Please add funds to your wallet.');
       return;
     }
@@ -48,8 +51,8 @@ const Index = () => {
   };
 
   // Get preferences from user or localStorage
-  const preferences = user?.preferences?.length 
-    ? user.preferences 
+  const preferences = user?.preferences?.length
+    ? user.preferences
     : JSON.parse(localStorage.getItem('guestPreferences') || '[]');
 
   // Filter videos based on preferences and active filter
@@ -73,7 +76,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10" />
@@ -83,12 +86,25 @@ const Index = () => {
               <Sparkles className="h-4 w-4" />
               Pay only for what you watch
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Learn at your own pace,{' '}
-              <span className="text-primary">pay for your attention</span>
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Our unique engagement-based billing ensures you only pay for the time you're actively learning. 
+            <div className="flex flex-col items-center gap-5">
+              <LayoutTextFlip
+                text="Welcome to "
+                words={["Murph", "Murph"]}
+                duration={4000}
+                className="text-8xl md:text-7xl font-bold tracking-tight mb-2"
+              />
+
+              <div className="text-xl md:text-2xl font-bold tracking-tight text-muted-foreground flex flex-row items-center justify-center gap-1 whitespace-nowrap">
+                <span>Learn</span>
+                <TypewriterEffect
+                  text=" at your own pace, pay for your attention"
+                  className="text-muted-foreground font-bold mb-0"
+                  delay={1.5}
+                />
+              </div>
+            </div>
+            <p className="text-xl text-primary">
+              Our unique engagement-based billing ensures you only pay for the time you're actively learning.
               No more wasted money on unwatched content.
             </p>
             {!user && (
@@ -140,12 +156,12 @@ const Index = () => {
             />
           ))}
         </div>
-        
+
         {filteredVideos.length === 0 && (
           <div className="text-center py-20">
             <p className="text-muted-foreground text-lg">No videos found for this category.</p>
-            <Button 
-              variant="link" 
+            <Button
+              variant="link"
               onClick={() => setActiveFilter('all')}
               className="mt-2"
             >
@@ -166,6 +182,8 @@ const Index = () => {
         video={selectedVideo}
         onClose={() => setSelectedVideo(null)}
       />
+
+      <InteractiveAd />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api, CourseWithLectures } from '@/lib/api';
+import { api, CourseWithLectures, formatUrl } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { LectureList } from '@/components/LectureList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,7 +85,7 @@ const StudentCourseView = () => {
                     <div className="relative aspect-[21/9] bg-gradient-to-br from-primary/20 to-secondary/20">
                         {course.image_url ? (
                             <img
-                                src={course.image_url}
+                                src={formatUrl(course.image_url)}
                                 alt={course.title}
                                 className="w-full h-full object-cover"
                             />

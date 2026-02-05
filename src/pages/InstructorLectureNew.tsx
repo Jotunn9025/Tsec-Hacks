@@ -17,19 +17,25 @@ const InstructorLectureNew = () => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        video_url: '',
         duration: 0,
         price_per_10_mins: 0,
     });
+    const [video, setVideo] = useState<File | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!courseId) return;
+        if (!courseId || !video) {
+            toast.error('Please select a video file');
+            return;
+        }
 
         setLoading(true);
 
         try {
-            await api.createLecture(parseInt(courseId), formData);
+            await api.createLecture(parseInt(courseId), {
+                ...formData,
+                video: video
+            });
             toast.success('Lecture created successfully!');
             navigate(`/instructor/courses/${courseId}`);
         } catch (error) {
@@ -87,17 +93,20 @@ const InstructorLectureNew = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="video_url">Video URL *</Label>
+                                <Label htmlFor="video">Lecture Video *</Label>
                                 <Input
-                                    id="video_url"
-                                    type="url"
-                                    placeholder="https://example.com/video.mp4"
-                                    value={formData.video_url}
-                                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                                    id="video"
+                                    type="file"
+                                    accept="video/*"
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            setVideo(e.target.files[0]);
+                                        }
+                                    }}
                                     required
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    Provide a direct link to the video file
+                                    Upload the video file for this lecture
                                 </p>
                             </div>
 

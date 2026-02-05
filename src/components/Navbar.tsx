@@ -22,7 +22,7 @@ export const Navbar = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to={getDashboardLink()} className="flex items-center gap-2">
           <Play className="h-8 w-8 text-primary fill-primary" />
-          <span className="text-xl font-bold">Meanttor</span>
+          <span className="text-xl font-bold">Murph</span>
         </Link>
 
         <div className="flex items-center gap-4">
