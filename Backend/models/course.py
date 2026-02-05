@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -19,6 +19,8 @@ class Course(Base):
     image_url = Column(String, nullable=True)
     # Total number of views across all lectures or for the course itself
     view_count = Column(Integer, default=0)
+    # Whether this course is active and visible to students
+    active_yn = Column(Boolean, default=True)
     # Foreign key referencing the InstructorProfile who created the course
     instructor_profile_id = Column(Integer, ForeignKey("instructor_profiles.id"), nullable=False)
     # Timestamp when the course was created

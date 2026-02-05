@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -22,6 +22,10 @@ class Lecture(Base):
     view_count = Column(Integer, default=0)
     # Duration of the lecture in seconds
     duration = Column(Integer, default=0)
+    # Whether this lecture is active and visible to students
+    active_yn = Column(Boolean, default=True)
 
     # Relationship back to the parent Course
     course = relationship("Course", back_populates="lectures")
+    # Granular tracking chunks
+    chunks = relationship("LectureChunk", back_populates="lecture", cascade="all, delete-orphan")

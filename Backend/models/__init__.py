@@ -5,4 +5,4 @@ from .lecture import Lecture
 from .instructor_profile import InstructorProfile
 from .student_profile import StudentProfile
 from .course_access import CourseAccess, CourseAccessStatus
-from .watch_activity import WatchActivity
+from .live_session import LiveSession, SessionRegistration, LiveSessionStatus

@@ -69,8 +69,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         )
     
     # Generate and return both access and refresh tokens
-    access_token = create_access_token(data={"sub": user.email, "role": user.role})
-    refresh_token = create_refresh_token(data={"sub": user.email})
+    access_token = create_access_token(data={"sub": user.email, "role": user.role, "id": user.id})
+    refresh_token = create_refresh_token(data={"sub": user.email, "id": user.id})
     return {
         "access_token": access_token, 
         "refresh_token": refresh_token, 
@@ -109,8 +109,8 @@ def refresh_access_token(token_in: TokenRefresh, db: Session = Depends(get_db)):
         )
     
     # Issue new tokens
-    new_access_token = create_access_token(data={"sub": user.email, "role": user.role})
-    new_refresh_token = create_refresh_token(data={"sub": user.email})
+    new_access_token = create_access_token(data={"sub": user.email, "role": user.role, "id": user.id})
+    new_refresh_token = create_refresh_token(data={"sub": user.email, "id": user.id})
     
     return {
         "access_token": new_access_token,

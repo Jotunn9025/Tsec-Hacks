@@ -12,8 +12,9 @@ erDiagram
     Courses ||--o{ Lectures : "contains"
     Users ||--o{ CourseAccess : "accesses"
     Courses ||--o{ CourseAccess : "is accessed by"
-    CourseAccess ||--o{ WatchActivity : "has activity"
-    Lectures ||--o{ WatchActivity : "is watched"
+    CourseAccess ||--o{ StudentChunkActivity : "has activity"
+    Lectures ||--o{ LectureChunk : "is divided into"
+    LectureChunk ||--o{ StudentChunkActivity : "is tracked by"
 
     Users {
         int id PK
@@ -67,21 +68,26 @@ erDiagram
         int id PK
         int student_id FK
         int course_id FK
-        float amount_locked
-        float total_watch_time_minutes
         float total_amount_spent
+        float last_position_seconds
         enum status "active, completed"
     }
 
-    WatchActivity {
+    LectureChunk {
         int id PK
-        int course_access_id FK
         int lecture_id FK
-        float watch_time_minutes
-        boolean completed
-        datetime last_watched_at
-        float amount_locked_for_lecture
-        float amount_spent_for_lecture
+        int index
+        float start_time
+        float end_time
+    }
+
+    StudentChunkActivity {
+        int id PK
+        int student_id FK
+        int lecture_chunk_id FK
+        int visit_count
+        boolean is_paid
+        float charged_amount
     }
 ```
 
@@ -132,21 +138,27 @@ Individual units of content within a course.
 - `duration`: Length of video in seconds.
 
 ### 6. `course_access`
-Tracks which student is accessing which course and financial locks.
+Tracks which student is accessing which course and their total expenditure.
 - `id`: Primary Key.
 - `student_id`: Foreign Key to `users.id`.
 - `course_id`: Foreign Key to `courses.id`.
-- `amount_locked`: Current funds locked for usage.
-- `total_watch_time_minutes`: Cumulative watch time for the course.
+- `total_amount_spent`: Total volume of funds charged for this course.
+- `last_position_seconds`: The most recent playback position for resuming.
 - `status`: Tracking if the course is `active` or `completed`.
 
-### 7. `watch_activity`
-Granular tracking of per-lecture watch time.
+### 7. `lecture_chunks`
+5-minute segments that divide each lecture for granular tracking and billing.
 - `id`: Primary Key.
-- `course_access_id`: Foreign Key to `course_access.id`.
 - `lecture_id`: Foreign Key to `lectures.id`.
-- `watch_time_minutes`: Time spent on this specific lecture.
-- `completed`: Whether the student finished this lecture.
-- `last_watched_at`: Timestamp of most recent activity.
-- `amount_locked_for_lecture`: Funds locked specifically for this lecture upon starting.
-- `amount_spent_for_lecture`: Total funds permanently charged for this specific lecture.
+- `index`: Numeric position of the chunk.
+- `start_time`: Start timestamp in seconds.
+- `end_time`: End timestamp in seconds.
+
+### 8. `student_chunk_activity`
+Tracks student visits and billing for individual video chunks.
+- `id`: Primary Key.
+- `student_id`: Foreign Key to `users.id`.
+- `lecture_chunk_id`: Foreign Key to `lecture_chunks.id`.
+- `visit_count`: Number of times the student has watched this chunk.
+- `is_paid`: Boolean indicating if this chunk has been charged.
+- `charged_amount`: The amount paid for this specific chunk.

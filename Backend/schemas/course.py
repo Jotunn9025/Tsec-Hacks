@@ -24,6 +24,8 @@ class CourseUpdate(BaseModel):
 class CourseOut(CourseBase):
     id: int
     instructor_profile_id: int
+    average_rating: float = 0.0
+    review_count: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
 
