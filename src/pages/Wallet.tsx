@@ -40,7 +40,7 @@ const Wallet = () => {
               <CardDescription className="text-primary-foreground/80">Current Balance</CardDescription>
               <CardTitle className="text-5xl font-bold flex items-center gap-3">
                 <WalletIcon className="h-12 w-12" />
-                ₹{user.wallet.toFixed(2)}
+                ₹{user.wallet_balance?.toFixed(2) || '0.00'}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -92,10 +92,11 @@ const Wallet = () => {
             </CardHeader>
             <CardContent className="space-y-3 text-muted-foreground">
               <p>• You're only charged for the time you actively watch videos</p>
-              <p>• Each video has a per-minute rate displayed on the card</p>
+              <p>• Each lecture has a per-minute rate displayed</p>
               <p>• We track your engagement through mouse and keyboard activity</p>
-              <p>• If you're inactive for 10 seconds, we pause and ask if you're still there</p>
-              <p>• Billing happens in real-time as you watch</p>
+              <p>• If you're inactive for 5 minutes, we pause and ask if you're still there</p>
+              <p>• Rewinding doesn't charge you twice - only forward progress counts</p>
+              <p>• Progress is automatically saved every 30 seconds</p>
             </CardContent>
           </Card>
         </div>

@@ -1,41 +1,93 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Play, Mail, Lock, User } from 'lucide-react';
+import {
+  Play,
+  Mail,
+  Lock,
+  User,
+  Check,
+  Phone,
+  Shield,
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { API_BASE_URL } from '@/lib/api';
+
+/* =========================
+   ZOD SCHEMA (FASTAPI MATCH)
+========================= */
+const SignupSchema = z
+  .object({
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    email: z.string().email('Invalid email address'),
+    phone_number: z
+      .string()
+      .min(10, 'Phone number must be at least 10 digits')
+      .max(15, 'Invalid phone number'),
+    role: z.enum(['user', 'instructor']),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+type SignupFormData = z.infer<typeof SignupSchema>;
 
 const Signup = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      setLoading(false);
-      return;
-    }
-    
-    const success = await signup(email, password, name);
-    
+  const form = useForm<SignupFormData>({
+    resolver: zodResolver(SignupSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone_number: '',
+      role: 'user',
+      password: '',
+      confirmPassword: '',
+    },
+  });
+
+  const {
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = form;
+
+  const password = watch('password');
+
+  /* =========================
+        API CALL
+  ========================= */
+  const onSubmit = async (data: SignupFormData) => {
+    const success = await signup(data.email, data.password, data.name, data.role);
+
     if (success) {
-      toast.success('Account created! You received ₹500 in your wallet.');
-      navigate('/');
-    } else {
-      toast.error('An account with this email already exists');
+      // Redirect based on role
+      const redirectPath = data.role === 'instructor' ? '/instructor/dashboard' : '/student/dashboard';
+      console.log('🚀 Signup successful, redirecting to:', redirectPath);
+
+      // Small delay to ensure state updates
+      setTimeout(() => {
+        navigate(redirectPath);
+      }, 100);
     }
-    
-    setLoading(false);
   };
 
   return (
@@ -48,65 +100,82 @@ const Signup = () => {
             </div>
           </div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Start learning with ₹500 free credits!</CardDescription>
+          <CardDescription>Sign up to get started</CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
+
+        <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
+            {/* NAME */}
+            <div>
+              <Label>Full Name</Label>
+              <Input {...form.register('name')} />
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
+
+            {/* EMAIL */}
+            <div>
+              <Label>Email</Label>
+              <Input type="email" {...form.register('email')} />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                  minLength={6}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+
+            {/* PHONE */}
+            <div>
+              <Label>Phone Number</Label>
+              <Input type="tel" {...form.register('phone_number')} />
+              {errors.phone_number && (
+                <p className="text-sm text-destructive">{errors.phone_number.message}</p>
+              )}
+            </div>
+
+            {/* ROLE */}
+            <div>
+              <Label>Role</Label>
+              <select
+                {...form.register('role')}
+                className="w-full border rounded-md p-2 bg-background"
+              >
+                <option value="user">User</option>
+                <option value="instructor">Instructor</option>
+
+              </select>
+            </div>
+
+            {/* PASSWORD */}
+            <div>
+              <Label>Password</Label>
+              <Input type="password" {...form.register('password')} />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+
+            {/* CONFIRM PASSWORD */}
+            <div>
+              <Label>Confirm Password</Label>
+              <Input
+                type="password"
+                {...form.register('confirmPassword', {
+                  validate: (val) =>
+                    val === password || "Passwords don't match",
+                })}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
           </CardContent>
+
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create Account'}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Create Account'}
             </Button>
-            <p className="text-sm text-muted-foreground text-center">
+
+            <p className="text-sm text-center text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:underline font-medium">
+              <Link to="/login" className="text-primary font-medium">
                 Sign in
               </Link>
             </p>

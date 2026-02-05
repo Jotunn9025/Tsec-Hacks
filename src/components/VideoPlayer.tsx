@@ -22,7 +22,7 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [watchTime, setWatchTime] = useState(0);
   const [totalCharged, setTotalCharged] = useState(0);
-  
+
   const lastActivityRef = useRef(Date.now());
   const watchTimeRef = useRef(0);
   const billedTimeRef = useRef(0);
@@ -39,7 +39,7 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
 
   const checkInactivity = useCallback(() => {
     if (!isPlaying || !video) return;
-    
+
     const timeSinceActivity = Date.now() - lastActivityRef.current;
     if (timeSinceActivity >= INACTIVITY_THRESHOLD) {
       setIsPlaying(false);
@@ -49,13 +49,13 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
 
   const billUser = useCallback(() => {
     if (!video || !user) return;
-    
+
     const unbilledSeconds = watchTimeRef.current - billedTimeRef.current;
     const unbilledMinutes = unbilledSeconds / 60;
-    
+
     if (unbilledMinutes > 0) {
       const charge = unbilledMinutes * video.pricePerMinute;
-      if (user.wallet >= charge) {
+      if (user.wallet_balance >= charge) {
         updateWallet(-charge);
         setTotalCharged(prev => prev + charge);
         billedTimeRef.current = watchTimeRef.current;
@@ -72,7 +72,7 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
       playIntervalRef.current = setInterval(() => {
         watchTimeRef.current += 1;
         setWatchTime(watchTimeRef.current);
-        
+
         // Bill every minute
         if (watchTimeRef.current % 60 === 0) {
           billUser();
@@ -152,8 +152,8 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
           <div className="relative aspect-video bg-black">
             {/* Simulated video player */}
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
-              <img 
-                src={video.thumbnail} 
+              <img
+                src={video.thumbnail}
                 alt={video.title}
                 className="w-full h-full object-cover opacity-30"
               />
@@ -166,8 +166,8 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
                     <p className="text-lg">Playing: {video.title}</p>
                   </div>
                 ) : (
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     onClick={() => setIsPlaying(true)}
                     className="gap-2"
                   >
@@ -183,17 +183,17 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
               <Progress value={progress} className="h-1 mb-3" />
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="text-white hover:text-white hover:bg-white/20"
                     onClick={() => setIsPlaying(!isPlaying)}
                   >
                     {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="text-white hover:text-white hover:bg-white/20"
                     onClick={() => setIsMuted(!isMuted)}
                   >
@@ -206,13 +206,13 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
                 <div className="flex items-center gap-4 text-white text-sm">
                   <span>Charged: ₹{totalCharged.toFixed(2)}</span>
                   <span className="px-3 py-1 bg-primary rounded-full">
-                    Balance: ₹{user?.wallet.toFixed(2)}
+                    Balance: ₹{user?.wallet_balance.toFixed(2)}
                   </span>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="p-4">
             <h2 className="text-xl font-bold">{video.title}</h2>
             <p className="text-muted-foreground mt-1">{video.description}</p>
@@ -224,7 +224,7 @@ export const VideoPlayer = ({ video, onClose }: VideoPlayerProps) => {
       </Dialog>
 
       {/* Inactivity Modal */}
-      <Dialog open={showInactivityModal} onOpenChange={() => {}}>
+      <Dialog open={showInactivityModal} onOpenChange={() => { }}>
         <DialogContent className="sm:max-w-md" onPointerDownOutside={handleActivity}>
           <DialogHeader>
             <div className="flex justify-center mb-4">

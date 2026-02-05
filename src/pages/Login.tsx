@@ -18,16 +18,27 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const success = await login(email, password);
-    
+
     if (success) {
       toast.success('Welcome back!');
-      navigate('/');
+      // Wait a bit for user state to update, then redirect based on role
+      setTimeout(() => {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          const redirectPath = userData.role === 'instructor' ? '/instructor/dashboard' : '/student/dashboard';
+          console.log('🚀 Redirecting to:', redirectPath);
+          navigate(redirectPath);
+        } else {
+          navigate('/');
+        }
+      }, 100);
     } else {
       toast.error('Invalid email or password');
     }
-    
+
     setLoading(false);
   };
 
