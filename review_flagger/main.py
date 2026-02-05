@@ -9,7 +9,7 @@ load_dotenv()
 # Ensure package structure works if run from outside
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from review_flagger.data_access import get_user_history, get_course_stats, get_context_summaries, get_user_meta
+from review_flagger.data_access import get_user_history, get_course_stats, get_context_summaries, get_user_meta, get_recent_lecture_ratings
 from review_flagger.core import calculate_deviation, detect_spammer_behavior, get_credibility_score
 from review_flagger.ai_validator import AIValidator
 from review_flagger.models import ReviewRequest
@@ -40,9 +40,18 @@ def main():
     course_avg, course_count = get_course_stats(request.coursename, request.lecture_name)
     transcript_sum, behavior_sum = get_context_summaries(request.coursename, request.lecture_name)
     
+    # NEW: Fetch recent lecture ratings
+    recent_lecture_ratings = get_recent_lecture_ratings(request.coursename, request.lecture_name)
+
     if not transcript_sum:
         print("Error: Course/Lecturer not found.")
         return
+
+    print(f"\n[Context Data]")
+    print(f"Course (Lecture) Average: {course_avg:.2f} (based on {course_count} ratings)")
+    print(f"Recent Lecture Ratings (last {len(recent_lecture_ratings)}):")
+    for r in recent_lecture_ratings:
+        print(f"  - {r.score}: {r.reason[:50]}...")
 
     # 2. Heuristic Analysis
     print("\n[Analytics Engine]")

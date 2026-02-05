@@ -20,8 +20,18 @@ def get_user_history(username: str, limit: int = 20) -> List[Rating]:
     # In a real DB, we would sort by date. Here we assume append order is chronological.
     return all_ratings[-limit:]
 
+def get_recent_lecture_ratings(coursename: str, lecture_name: str, limit: int = 5) -> List[Rating]:
+    """Retrieve the last N ratings for a specific lecture."""
+    lecture_ratings = [
+        Rating(**r) for r in _DB.get("ratings", []) 
+        if r["coursename"] == coursename and r["lecture_name"] == lecture_name
+    ]
+    # Assume append order is chronological.
+    return lecture_ratings[-limit:]
+
 def get_course_stats(coursename: str, lecture_name: str) -> Tuple[float, int]:
     """Get the average rating and count for a specific course/lecture combination."""
+    # This already correctly filters by course and lecture to calculate stats.
     ratings = [
         r["score"] for r in _DB.get("ratings", []) 
         if r["coursename"] == coursename and r["lecture_name"] == lecture_name

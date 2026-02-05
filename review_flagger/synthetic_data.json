@@ -142,6 +142,30 @@
       "lecture_name": "Neural Networks Basics",
       "is_flagged": false,
       "reason": "Great"
+    },
+    {
+      "score": 2.0,
+      "username": "student_5",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Confusing"
+    },
+    {
+      "score": 4.0,
+      "username": "student_6",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Clear enough"
+    },
+    {
+      "score": 3.0,
+      "username": "student_7",
+      "coursename": "Intro to AI",
+      "lecture_name": "Neural Networks Basics",
+      "is_flagged": false,
+      "reason": "Average"
     }
   ]
 }
